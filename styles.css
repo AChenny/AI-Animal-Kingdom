@@ -1,0 +1,46 @@
+/*
+.button {
+	position: relative;
+	background-color: #4CAF50;
+	border: none;
+	font-size: 28px;
+	color: #FFFFFF;
+	padding: 20px;
+	width: 200px;
+	text-align: center;
+	-webkit-transition-duration: 0.4s;
+	Safari transition-duration: 0.4s;
+	text-decoration: none;
+	overflow: hidden;
+	cursor: pointer;
+}
+*/
+
+#canvas {
+	display: block;
+}
+
+#info {
+	display: inline-block;
+	text-overflow: clip;
+	overflow: hidden;
+	margin-right: 200px;
+}
+
+#commands {
+	display: inline-block;
+	text-align: center;
+	margin-left: 200px;
+}
+
+#devTools {
+	background-color: aqua;
+	width: 1500px;
+}
+
+section {
+	width: 200px;
+	height: 200px;
+	background-color: grey;
+	vertical-align: top;
+}

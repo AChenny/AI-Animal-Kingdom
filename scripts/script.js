@@ -1,88 +1,101 @@
-//draw - fill container, draw first node, draw second node
-function draw(container, ctx, node1, node2, muscle) {
+/*jshint esversion: 6 */
+//draw everything on canvas
+//TODO: Change use of canvas to a container and moving elements around to avoid the buffer of frame drawing
+function draw(container, ctx, nodes, muscles) {
+
 	//draw in the container
 	ctx.fillStyle = "#000000";
 	ctx.fillRect(container.y, container.x, container.width, container.height);
 
-	//draw first node
-	ctx.arc(node1.x, node1.y, node1.r, 0, 2 * Math.PI);
-	ctx.fillStyle = node1.color;
-	ctx.closePath();
-	ctx.fill();
+	// for loop to draw all objects of nodes 
+	for (var i = 0; i < nodes.length; i++) {
+		ctx.beginPath();
+		ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
+		ctx.fillStyle = nodes[i].color;
+		ctx.closePath();
+		ctx.fill();
 
-	//draw second node
-	ctx.arc(node2.x, node2.y, node2.r, 0, 2 * Math.PI);
-	ctx.strokeStyle = node2.color;
-	ctx.fillStyle = node2.color;
-	ctx.closePath();
-	ctx.fill();
-
-	//draw muscle
-	ctx.beginPath();
-	ctx.moveTo(muscle.node1x, muscle.node1y);
-	ctx.lineTo(muscle.node2x, muscle.node2y);
-	ctx.strokeStyle = muscle.color;
-	ctx.lineWidth = muscle.width;
-	ctx.closePath();
-	ctx.stroke();
+		//check if node needs to be highlighted
+		if (nodes[i].highlight == true) {
+			ctx.beginPath();
+			ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
+			ctx.strokeStyle = nodes[i].highlightColor;
+			ctx.lineWidth = 5; // for now
+			ctx.closePath();
+			ctx.stroke();
+		}
+	}
+	//loop and draw every muscle
+	for (i = 0; i < muscles.length; i++) {
+		ctx.beginPath();
+		ctx.moveTo(muscles[i].node1x, muscles[i].node1y);
+		ctx.lineTo(muscles[i].node2x, muscles[i].node2y);
+		ctx.strokeStyle = muscles[i].color;
+		ctx.lineWidth = muscles[i].width;
+		ctx.closePath();
+		ctx.stroke();
+	}
 }
 
-//function node - contain all node values
+//Node class
+class Node {
+	constructor(x, y, r, color, highlight, highlightColor) {
+		this.x = x;
+		this.y = y;
+		this.r = r || 20;
+		this.color = color || "#ff0";
+		this.highlight = highlight || false;
+		this.highlightColor = highlightColor || "#0000FF";
+	}
+}
 
-function Node(x, y, r, color) {
-	this.x = x;
-	this.y = y;
-	this.r = r || 20;
-	this.color = color || "#ff0"
-};
+//Muscle class
+class Muscle {
+	constructor(node1, node2, width, color) {
+		this.node1 = node1;
+		this.node2 = node2;
+		this.width = width || 5;
+		this.color = color || "#f00";
 
-/*funciton muscle - set the muscle values and hold them in this function
-*/
 
-function Muscle(node1, node2, width, color) {
-	this.node1 = node1;
-	this.node2 = node2;
-	this.width = width || 5;
-	this.color = color || "#f00";
+		//Properties of the nodes this muscle attaches to 
+		Object.defineProperties(this, {
 
-	// get set methods to access/modify the positions of the nodes
-	Object.defineProperties(this, {
+			node1x: {
+				"get": () => this.node1.x,
+				"set": x => {
+					this.node1.x = x;
+				}
+			},
 
-		node1x: {
-			"get": () => this.node1.x,
-			"set": x => {
-				this.node1.x = x
+			node1y: {
+				"get": () => this.node1.y,
+				"set": y => {
+					this.node1.y = y;
+				}
+			},
+
+			node2x: {
+				"get": () => this.node2.x,
+				"set": x => {
+					this.node2.x = x;
+				}
+			},
+
+			node2y: {
+				"get": () => this.node2.y,
+				"set": y => {
+					this.node2.x = y;
+				}
 			}
-		},
+		});
+	}
+}
 
-		node1y: {
-			"get": () => this.node1.y,
-			"set": y => {
-				this.node1.y = y
-			}
-		},
-
-		node2x: {
-			"get": () => this.node2.x,
-			"set": x => {
-				this.node2.x = x
-			}
-		},
-
-		node2y: {
-			"get": () => this.node2.y,
-			"set": y => {
-				this.node2.x = y
-			}
-		}
-	});
-};
-
-//function handlemousedrag variables for dragging, object for offset containing x, y, x0, y0
-
+//Handle moving a node with mousedrag
 function handleMouseDrag(canvas, nodes) {
 	var isDrag = false;
-	var dragNode = undefined; // node to be dragged
+	var dragNode;
 	var offset = {
 		x: 0,
 		y: 0,
@@ -90,17 +103,21 @@ function handleMouseDrag(canvas, nodes) {
 		y0: 0
 	};
 
-	//handle mousedown
-	canvas.addEventListener("mousedown", function (e) {
-		var x = e.offsetX,
-				y = e.offsetY;
 
-		// do a for loop to find which node it is targetting
+	canvas.addEventListener("mousedown", function (e) {
+		//mousedown then save the position in var x and y
+		var x = e.offsetX,
+			y = e.offsetY;
+
+		//loop through all the nodes to find the first node that is within radius of the mouse click
 		for (var i in nodes) {
-			// check if where the user clicked is within the radius of the node
+
 			if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2)) {
 				isDrag = true;
 				dragNode = nodes[i];
+
+				//offset.x&y = where the node is currently
+				//offset x0&y0 = where the user clicked
 				offset = {
 					x: dragNode.x,
 					y: dragNode.y,
@@ -113,8 +130,11 @@ function handleMouseDrag(canvas, nodes) {
 	});
 	// when mouse moves and isDrag is true, move the node's position
 	canvas.addEventListener("mousemove", function (e) {
+		/*when the user moves the mouse, take the difference of where his mouse is right now and where the user clicked.
+		Then, add that to where the node is right now to find the correct placement of the node without centering on your mouse 
+		*/
 		if (isDrag) {
-			dragNode.x = e.offsetX - offset.x0 + offset.x;
+			dragNode.x = e.offsetX - offset.x0 + offset.x; // where the mouse is right now - where the user mousedown + where the node is right now
 			dragNode.y = e.offsetY - offset.y0 + offset.y;
 		}
 	});
@@ -126,37 +146,131 @@ function handleMouseDrag(canvas, nodes) {
 	canvas.addEventListener("mouseleave", function (e) {
 		isDrag = false;
 	});
-};
+}
 
-//function main new object calls for nodes and muscle, instantiate the canvas and container, call handlemousedrag and then update frame
+//Handle highlighting and adding nodes
+function handleMouseClick(canvas, nodes, muscles) {
+	var node1;
+	var node2;
 
+	canvas.addEventListener("mousedown", function (e) {
+		var x = e.offsetX,
+				y = e.offsetY;
+
+
+		loop1:
+			for (var i = 0; i < nodes.length; i++) {
+				// check if click is within radius of a node, if it is, highlight and set highlight boolean to true.
+				if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == false) {
+					nodes[i].highlight = true;
+					node1 = nodes[i];
+				}
+				// If setHighlight is already true, set it to false
+				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
+					nodes[i].highlight = false;
+					node1 = undefined;
+				}
+
+				// if the click is out of the radius of the node, then add a new node and muscle connecting the new node
+				//FIXME: Low priority, but sometimes after attaching a node to an existing node, the highlight will remain, fix for later
+				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) > Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
+					var attachedMuscle = false;
+
+					loop2:
+						for (var n = 0; n < nodes.length; n++) {
+							//skip over the node we're currently on
+							if (n == i) {
+								continue;
+							}
+							// If we're on top of another node that is not the highlighted node, create a muscle between them
+							else if (Math.pow(x - nodes[n].x, 2) + Math.pow(y - nodes[n].y, 2) < Math.pow(nodes[n].r, 2)) {
+								node1 = nodes[i];
+								node2 = nodes[n];
+
+								var muscle = new Muscle(node1, node2);
+								muscles.push(muscle);
+								node1.highlight = false;
+								node2.highlight = false;
+								attachedMuscle = true;
+							} else {
+								continue;
+							}
+						}
+					if (attachedMuscle == false) {
+						node2 = new Node(e.offsetX, e.offsetY);
+						var muscle = new Muscle(node1, node2);
+
+						nodes.push(node2);
+						muscles.push(muscle);
+						nodes[i].highlight = false;
+						break loop1;
+					}
+				}
+				//TODO: If clicked out of radius of any nodes and there is no highlighted nodes, handle adding 2 new nodes and a muscle 
+				else {
+					console.log("Nothing clicked.");
+				}
+			}
+	});
+}
+
+//Function to handle Devtools
+function devTools(nodes) {
+	var selected = document.getElementById("selected");
+	var commands = document.getElementById("commands")
+	var addNodeB = document.getElementById("addNode");
+	var removeNodeB = document.getElementById("removeNode");
+	var attachMuscleB = document.getElementById("attachMuscle");
+	
+	for (var i = 0; i < nodes.length; i++) {
+		if (nodes[i].highlight == true) {
+			selected.innerHTML = `Selected: ${i} node`;	
+			addNodeB.disabled = false;
+			return;
+		}
+		else {
+			selected.innerHTML = "Selected: None";
+			addNodeB.disabled = true;
+		}
+	}
+	
+}
+
+//Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
 function main() {
-	var node1 = new Node(300, 300);
-	var node2 = new Node(200, 200);
-	var muscle = new Muscle(node1, node2);
-
 	var canvas = document.getElementById("canvas");
+	var ctx = canvas.getContext("2d");
 	var container = {
 		x: 0,
 		y: 0,
 		get width() {
-			return canvas.width
+			return canvas.width;
 		},
 		get height() {
-			return canvas.height
+			return canvas.height;
 		}
 	};
-	var ctx = canvas.getContext("2d");
 
-	handleMouseDrag(canvas, [node1, node2]);
-	// refresh and redraw with new properties in an updateframe
+	var nodes = [
+		new Node(100, 100),
+		new Node(200, 200)
+	];
+	var muscles = [
+		new Muscle(nodes[0], nodes[1])
+	];
+
+	handleMouseDrag(canvas, nodes);
+	handleMouseClick(canvas, nodes, muscles);
+
+	// refresh and redraw with new properties in an updateframe infinite loop
 	function updateFrame() {
 		ctx.save();
-		draw(container, ctx, node1, node2, muscle);
+		draw(container, ctx, nodes, muscles);
 		ctx.restore();
 		requestAnimationFrame(updateFrame);
+		devTools(nodes); 
 	}
 	updateFrame();
-};
+}
 
 main();

@@ -4,14 +4,30 @@
 
 <head>
 	<meta charset="UTF-8">
-	
+	<link rel="stylesheet" type="text/css" href="styles.css" />
 </head>
 
 <body>
-	<canvas id="canvas" width="600px", height="600px">
-		
-	</canvas>
-	
+	<!--TODO: Adjust the size of the canvas to fit the window-->
+	<canvas id="canvas" width="1500" , height="600"></canvas>
+
+	<!--TODO: Create buttons for all devtools under the canvas-->
+	<!--TODO: Make a container for all devtools under the canvas, then add all the functionality to it after-->
+	<div id="devTools">
+		<section id="info">
+			<p>Info</p>
+			<p>Creature Number: </p> 
+			<p id="selected">Selected: </p>
+		</section>
+
+		<section id="commands">
+			<p>Commands</p>
+			<button type="button" id="addNode" disabled=true>Add node</button>
+			<button type="button" id="removeNode" disabled=true>Remove node</button>
+			<button type="button" id="attachMuscle" disabled=true>Attach muscle</button>
+			<button type="button" id="addLimb" disabled=true>Add Limb</button>
+		</section>
+	</div>
 	<script src="scripts/script.js"></script>
 </body>
 
