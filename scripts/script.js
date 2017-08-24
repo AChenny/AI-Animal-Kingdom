@@ -1,42 +1,6 @@
 /*jshint esversion: 6 */
 //draw everything on canvas
 //TODO: Change use of canvas to a container and moving elements around to avoid the buffer of frame drawing
-function draw(container, ctx, nodes, muscles) {
-
-	//draw in the container
-	ctx.fillStyle = "#000000";
-	ctx.fillRect(container.y, container.x, container.width, container.height);
-
-	// for loop to draw all objects of nodes 
-	for (var i = 0; i < nodes.length; i++) {
-		ctx.beginPath();
-		ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
-		ctx.fillStyle = nodes[i].color;
-		ctx.closePath();
-		ctx.fill();
-
-		//check if node needs to be highlighted
-		if (nodes[i].highlight == true) {
-			ctx.beginPath();
-			ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
-			ctx.strokeStyle = nodes[i].highlightColor;
-			ctx.lineWidth = 5; // for now
-			ctx.closePath();
-			ctx.stroke();
-		}
-	}
-	//loop and draw every muscle
-	for (i = 0; i < muscles.length; i++) {
-		ctx.beginPath();
-		ctx.moveTo(muscles[i].node1x, muscles[i].node1y);
-		ctx.lineTo(muscles[i].node2x, muscles[i].node2y);
-		ctx.strokeStyle = muscles[i].color;
-		ctx.lineWidth = muscles[i].width;
-		ctx.closePath();
-		ctx.stroke();
-	}
-}
-
 //Node class
 class Node {
 	constructor(x, y, r, color, highlight, highlightColor) {
@@ -89,6 +53,48 @@ class Muscle {
 				}
 			}
 		});
+	}
+}
+
+var nodes = [
+		new Node(100, 100),
+		new Node(200, 200)
+];
+var addNodePressed = false;
+
+function draw(container, ctx, nodes, muscles) {
+
+	//draw in the container
+	ctx.fillStyle = "#000000";
+	ctx.fillRect(container.y, container.x, container.width, container.height);
+
+	// for loop to draw all objects of nodes 
+	for (var i = 0; i < nodes.length; i++) {
+		ctx.beginPath();
+		ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
+		ctx.fillStyle = nodes[i].color;
+		ctx.closePath();
+		ctx.fill();
+
+		//check if node needs to be highlighted
+		if (nodes[i].highlight == true) {
+			ctx.beginPath();
+			ctx.arc(nodes[i].x, nodes[i].y, nodes[i].r, 0, 2 * Math.PI);
+			ctx.strokeStyle = nodes[i].highlightColor;
+			ctx.lineWidth = 5; // for now
+			ctx.closePath();
+			ctx.stroke();
+		}
+	}
+	//loop and draw every muscle
+	for (i = 0; i < muscles.length; i++) {
+		ctx.beginPath();
+		ctx.moveTo(muscles[i].node1x, muscles[i].node1y);
+		ctx.lineTo(muscles[i].node2x, muscles[i].node2y);
+		ctx.strokeStyle = muscles[i].color;
+		ctx.lineWidth = muscles[i].width;
+		ctx.closePath();
+		ctx.stroke();
 	}
 }
 
@@ -164,17 +170,20 @@ function handleMouseClick(canvas, nodes, muscles) {
 				if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == false) {
 					nodes[i].highlight = true;
 					node1 = nodes[i];
+					devTools(nodes, false, true, true, true);
 				}
 				// If setHighlight is already true, set it to false
 				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
 					nodes[i].highlight = false;
 					node1 = undefined;
+					devTools(nodes, true, false, false, false)
 				}
 
 				// if the click is out of the radius of the node, then add a new node and muscle connecting the new node
 				//FIXME: Low priority, but sometimes after attaching a node to an existing node, the highlight will remain, fix for later
 				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) > Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
 					var attachedMuscle = false;
+					devTools(nodes, true, false, false, false);
 
 					loop2:
 						for (var n = 0; n < nodes.length; n++) {
@@ -215,25 +224,36 @@ function handleMouseClick(canvas, nodes, muscles) {
 }
 
 //Function to handle Devtools
-function devTools(nodes) {
+function devTools(nodes, addNode, removeNode, attachMuscle, addLimb) {
+
 	var selected = document.getElementById("selected");
 	var commands = document.getElementById("commands")
 	var addNodeB = document.getElementById("addNode");
 	var removeNodeB = document.getElementById("removeNode");
 	var attachMuscleB = document.getElementById("attachMuscle");
-	
+	var addLimbB = document.getElementById("addLimb");
+
+	(addNode) ? addNodeB.disabled = false: addNodeB.disabled = true;
+	(removeNode) ? removeNodeB.disabled = false: removeNodeB.disabled = true;
+	(attachMuscle) ? attachMuscleB.disabled = false: attachMuscleB.disabled = true;
+	(addLimb) ? addLimbB.disabled = false: addLimbB.disabled = true;
+
+
 	for (var i = 0; i < nodes.length; i++) {
 		if (nodes[i].highlight == true) {
-			selected.innerHTML = `Selected: ${i} node`;	
-			addNodeB.disabled = false;
+			selected.innerHTML = `Selected: ${i} node`;
 			return;
-		}
-		else {
+		} else {
 			selected.innerHTML = "Selected: None";
-			addNodeB.disabled = true;
 		}
 	}
-	
+
+}
+
+//TODO: Functions for each command
+//function addNode
+function addNode() {
+
 }
 
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
@@ -251,10 +271,6 @@ function main() {
 		}
 	};
 
-	var nodes = [
-		new Node(100, 100),
-		new Node(200, 200)
-	];
 	var muscles = [
 		new Muscle(nodes[0], nodes[1])
 	];
@@ -268,7 +284,6 @@ function main() {
 		draw(container, ctx, nodes, muscles);
 		ctx.restore();
 		requestAnimationFrame(updateFrame);
-		devTools(nodes); 
 	}
 	updateFrame();
 }
