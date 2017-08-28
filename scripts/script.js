@@ -60,7 +60,16 @@ var nodes = [
 		new Node(100, 100),
 		new Node(200, 200)
 ];
+
+var muscles = [
+		new Muscle(nodes[0], nodes[1])
+];
+
 var addNodePressed = false;
+var removeNodePressed = false;
+var attachMusclePressed = false;
+var addLimbPressed = false;
+
 
 function draw(container, ctx, nodes, muscles) {
 
@@ -158,69 +167,74 @@ function handleMouseDrag(canvas, nodes) {
 function handleMouseClick(canvas, nodes, muscles) {
 	var node1;
 	var node2;
+	var highlighted;
+	var highlightedNode;
 
 	canvas.addEventListener("mousedown", function (e) {
 		var x = e.offsetX,
 				y = e.offsetY;
 
+		var loopbreak = false;
 
-		loop1:
-			for (var i = 0; i < nodes.length; i++) {
-				// check if click is within radius of a node, if it is, highlight and set highlight boolean to true.
-				if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == false) {
-					nodes[i].highlight = true;
-					node1 = nodes[i];
-					devTools(nodes, false, true, true, true);
-				}
-				// If setHighlight is already true, set it to false
-				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
-					nodes[i].highlight = false;
-					node1 = undefined;
-					devTools(nodes, true, false, false, false)
-				}
+		for (var i = 0; i < nodes.length; i++) {
+			// check if click is within radius of a node, if it is, highlight and set highlight boolean to true.
+			// TODO: Finish add limb functionality
+			// TODO: Unhighlight functionality
 
-				// if the click is out of the radius of the node, then add a new node and muscle connecting the new node
-				//FIXME: Low priority, but sometimes after attaching a node to an existing node, the highlight will remain, fix for later
-				else if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) > Math.pow(nodes[i].r, 2) && nodes[i].highlight == true) {
-					var attachedMuscle = false;
-					devTools(nodes, true, false, false, false);
+			if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2)) {
+				var clickedNode = nodes[i];
 
-					loop2:
-						for (var n = 0; n < nodes.length; n++) {
-							//skip over the node we're currently on
-							if (n == i) {
-								continue;
-							}
-							// If we're on top of another node that is not the highlighted node, create a muscle between them
-							else if (Math.pow(x - nodes[n].x, 2) + Math.pow(y - nodes[n].y, 2) < Math.pow(nodes[n].r, 2)) {
-								node1 = nodes[i];
-								node2 = nodes[n];
-
-								var muscle = new Muscle(node1, node2);
-								muscles.push(muscle);
-								node1.highlight = false;
-								node2.highlight = false;
-								attachedMuscle = true;
-							} else {
-								continue;
-							}
-						}
-					if (attachedMuscle == false) {
-						node2 = new Node(e.offsetX, e.offsetY);
-						var muscle = new Muscle(node1, node2);
-
-						nodes.push(node2);
-						muscles.push(muscle);
-						nodes[i].highlight = false;
-						break loop1;
+				if (addNodePressed) {
+					// FIXME: Will still add the node (break call doesnt work)
+					console.log("Not valid. Cannot add a node on top of another node.");
+					lookbreak = true;
+					break;
+				} else if (addLimbPressed) {
+					console.log("Not valid. Cannot add a limb on top of another node.");
+					loopbreak = true;
+					break;
+				} else if (attachMusclePressed) {
+					if (highlightedNode == clickedNode) {
+						console.log("Not valid. Cannot attach muscle to the same node.");
+						loopbreak = true;
+						break;
+					}
+					else {
+						newMuscle = new Muscle (highlightedNode, clickedNode);
+						muscles.push(newMuscle);
+						attachMuscle();
+						highlightedNode.highlight = false;
 					}
 				}
-				//TODO: If clicked out of radius of any nodes and there is no highlighted nodes, handle adding 2 new nodes and a muscle 
+				//no button pressed - highlight node
 				else {
-					console.log("Nothing clicked.");
+					highlighted = true;
+					highlightedNode = nodes[i];
+					nodes[i].highlight = true;
+					devTools(nodes, false, true, true, true);
+					loopbreak = true;
+					break;
 				}
 			}
-	});
+		}
+		// if click was not in radius of any nodes then check for add limb or create node button press. 
+		if (!loopbreak) {
+			loopbreak = false;
+			if (addNodePressed) {
+				var newNode = new Node(x, y);
+				nodes.push(newNode);
+				addNode();
+				addNodePressed = false;
+			} else if (addLimbPressed) {
+				var newNode = new Node(x, y);
+				var newMuscle = new Muscle(newNode, highlightedNode);
+				nodes.push(newNode);
+				muscles.push(newMuscle);
+				addLimbPressed = false;
+			}
+			devTools(nodes, true, false, false, false);
+		}
+	})
 }
 
 //Function to handle Devtools
@@ -250,11 +264,56 @@ function devTools(nodes, addNode, removeNode, attachMuscle, addLimb) {
 
 }
 
-//TODO: Functions for each command
-//function addNode
+//Handle add node button
 function addNode() {
+	var addNodeB = document.getElementById("addNode");
 
+	if (addNodePressed) {
+		addNodePressed = false;
+		addNodeB.style.background = "";
+	} else {
+		addNodePressed = true;
+		addNodeB.style.backgroundColor = "#808080";
+		//and unhighlight
+	}
 }
+
+//Handle remove node button
+function removeNode() {
+	// FIXME: If there are more than 1 muscle, than it will not remove all the muscles. 
+	for (var i = 0; i < nodes.length; i++) {
+		if (nodes[i].highlight == true) {
+
+			for (var x = 0; x < muscles.length; x++) {
+				if (muscles[x].node1 == nodes[i] || muscles[x].node2 == nodes[i]) {
+					muscles.splice(x, 1);
+				}
+			}
+			nodes.splice(i, 1);
+
+		}
+	}
+
+	devTools(nodes, true, false, false, false);
+}
+
+//Handle attach muscle button
+function attachMuscle() {
+	var attachMuscleB = document.getElementById("attachMuscle");
+
+	if (attachMusclePressed) {
+		attachMusclePressed = false;
+		attachMuscleB.style.background = "";
+	} else {
+		attachMusclePressed = true;
+		attachMuscleB.style.backgroundColor = "#808080";
+	}
+}
+
+//Handle add limb button 
+function addLimb() {
+}
+
 
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
 function main() {
@@ -270,10 +329,6 @@ function main() {
 			return canvas.height;
 		}
 	};
-
-	var muscles = [
-		new Muscle(nodes[0], nodes[1])
-	];
 
 	handleMouseDrag(canvas, nodes);
 	handleMouseClick(canvas, nodes, muscles);
