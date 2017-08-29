@@ -66,10 +66,8 @@ var muscles = [
 ];
 
 var addNodePressed = false;
-var removeNodePressed = false;
 var attachMusclePressed = false;
 var addLimbPressed = false;
-
 
 function draw(container, ctx, nodes, muscles) {
 
@@ -163,10 +161,8 @@ function handleMouseDrag(canvas, nodes) {
 	});
 }
 
-//Handle highlighting and adding nodes
+//Handle highlighting and button functionality
 function handleMouseClick(canvas, nodes, muscles) {
-	var node1;
-	var node2;
 	var highlighted;
 	var highlightedNode;
 
@@ -178,16 +174,13 @@ function handleMouseClick(canvas, nodes, muscles) {
 
 		for (var i = 0; i < nodes.length; i++) {
 			// check if click is within radius of a node, if it is, highlight and set highlight boolean to true.
-			// TODO: Finish add limb functionality
-			// TODO: Unhighlight functionality
 
 			if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2)) {
 				var clickedNode = nodes[i];
 
 				if (addNodePressed) {
-					// FIXME: Will still add the node (break call doesnt work)
 					console.log("Not valid. Cannot add a node on top of another node.");
-					lookbreak = true;
+					loopbreak = true;
 					break;
 				} else if (addLimbPressed) {
 					console.log("Not valid. Cannot add a limb on top of another node.");
@@ -200,18 +193,37 @@ function handleMouseClick(canvas, nodes, muscles) {
 						break;
 					}
 					else {
-						newMuscle = new Muscle (highlightedNode, clickedNode);
+						var newMuscle = new Muscle (highlightedNode, clickedNode);
 						muscles.push(newMuscle);
 						attachMuscle();
 						highlightedNode.highlight = false;
+						highlighted = false;
+						devTools(nodes, true, false, false, false);
 					}
 				}
-				//no button pressed - highlight node
+				//no button pressed - highlight/unhighlight node
 				else {
-					highlighted = true;
-					highlightedNode = nodes[i];
-					nodes[i].highlight = true;
-					devTools(nodes, false, true, true, true);
+					if (highlighted || nodes[i].highlight) {
+						if (highlightedNode != nodes[i]) {
+							highlightedNode.highlight = false;
+							highlightedNode = nodes[i];
+							highlightedNode.highlight = true;
+							devTools(nodes, false, true, true, true);
+						}
+						else {
+							highlightedNode = nodes[i];
+							highlightedNode.highlight= false;
+							highlighted = false;
+							highlightedNode = undefined;
+							devTools(nodes, true, false, false, false);
+						}
+					}
+					else {
+						highlightedNode = nodes[i];
+						highlightedNode.highlight = true;
+						highlighted = true;
+						devTools(nodes, false, true, true, true);
+					}
 					loopbreak = true;
 					break;
 				}
@@ -220,37 +232,42 @@ function handleMouseClick(canvas, nodes, muscles) {
 		// if click was not in radius of any nodes then check for add limb or create node button press. 
 		if (!loopbreak) {
 			loopbreak = false;
+      var newNode;
 			if (addNodePressed) {
-				var newNode = new Node(x, y);
+				newNode = new Node(x, y);
 				nodes.push(newNode);
 				addNode();
 				addNodePressed = false;
+				devTools(nodes, true, false, false, false);
 			} else if (addLimbPressed) {
-				var newNode = new Node(x, y);
+				newNode = new Node(x, y);
 				var newMuscle = new Muscle(newNode, highlightedNode);
 				nodes.push(newNode);
 				muscles.push(newMuscle);
+				addLimb();
 				addLimbPressed = false;
+				highlightedNode.highlight = false;
+				highlighted = false;
+				highlightedNode = undefined;
+				devTools(nodes, true, false, false, false);
 			}
-			devTools(nodes, true, false, false, false);
 		}
-	})
+	});
 }
 
-//Function to handle Devtools
+//Handle Devtools
 function devTools(nodes, addNode, removeNode, attachMuscle, addLimb) {
 
 	var selected = document.getElementById("selected");
-	var commands = document.getElementById("commands")
 	var addNodeB = document.getElementById("addNode");
 	var removeNodeB = document.getElementById("removeNode");
 	var attachMuscleB = document.getElementById("attachMuscle");
 	var addLimbB = document.getElementById("addLimb");
 
-	(addNode) ? addNodeB.disabled = false: addNodeB.disabled = true;
-	(removeNode) ? removeNodeB.disabled = false: removeNodeB.disabled = true;
-	(attachMuscle) ? attachMuscleB.disabled = false: attachMuscleB.disabled = true;
-	(addLimb) ? addLimbB.disabled = false: addLimbB.disabled = true;
+	addNodeB.disabled = (addNode) ? false : true;
+	removeNodeB.disabled = (removeNode) ? false : true;
+	attachMuscleB.disabled = (attachMuscle) ? false : true;
+	addLimbB.disabled = (addLimb) ? false : true;
 
 
 	for (var i = 0; i < nodes.length; i++) {
@@ -280,13 +297,13 @@ function addNode() {
 
 //Handle remove node button
 function removeNode() {
-	// FIXME: If there are more than 1 muscle, than it will not remove all the muscles. 
 	for (var i = 0; i < nodes.length; i++) {
 		if (nodes[i].highlight == true) {
 
 			for (var x = 0; x < muscles.length; x++) {
 				if (muscles[x].node1 == nodes[i] || muscles[x].node2 == nodes[i]) {
 					muscles.splice(x, 1);
+					x--;
 				}
 			}
 			nodes.splice(i, 1);
@@ -312,6 +329,16 @@ function attachMuscle() {
 
 //Handle add limb button 
 function addLimb() {
+	var addLimbB = document.getElementById("addLimb");
+	
+	if (addLimbPressed ) {
+		addLimbPressed = false;
+		addLimbB.style.background= "";
+	}
+	else {
+		addLimbPressed = true;
+		addLimbB.style.backgroundColor = "#808080";
+	}
 }
 
 
