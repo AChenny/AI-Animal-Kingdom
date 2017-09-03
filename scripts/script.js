@@ -2,7 +2,6 @@
 //draw everything on canvas
 //TODO: Change use of canvas to a container and moving elements around to avoid the buffer of frame drawing
 
-//TODO: add creature number to Node class
 //Node class
 class Node {
 	constructor(x, y, r, color, highlight, highlightColor) {
@@ -15,7 +14,6 @@ class Node {
 	}
 }
 
-//TODO: add creature number to muscle class
 //Muscle class
 class Muscle {
 	constructor(node1, node2, width, color) {
@@ -59,39 +57,46 @@ class Muscle {
 	}
 }
 
+function setParentForNodes() {
+	this.nodes.forEach(node => {
+		node.parentCreature = this;
+	});
+}
+
 class Creature {
 	constructor(nodes, muscles, nodeColors) {
 		this.nodes = nodes;
 		this.muscles = muscles;
-		this.nodeColors = nodeColors || "#ff0";;
-
+		this.nodeColors = nodeColors || "#ff0";
+		setParentForNodes.call(this);
 
 		Object.defineProperties(this, {
 
-			nodesArray: {
-				"get": (i) => this.nodes[i],
-				"set": nodes => {
-					this.nodes[i] = newNode;
-				}
-			},
-
-			musclesArray: {
-				"get": (i) => this.nodes[i],
-				"set": muscles => {
-					this.muscles[i] = newMuscle;
-				}
+			creatureNumber: {
+				"get": () => creatures.indexOf(this),
 			}
 		});
+	}
+
+	addNewNode(newNode) {
+		newNode.parentCreature = this;
+		this.nodes.push(newNode);
+	}
+	addNewNodes(newNodes) {
+		newNodes.forEach(function(node) {
+			node.parentCreature = this;
+		}, this);
+		this.nodes = this.nodes.concat(newNodes);
 	}
 }
 
 var nodes = [
-		new Node(100, 100),
-		new Node(200, 200)
+	new Node(100, 100),
+	new Node(200, 200)
 ];
 
 var muscles = [
-		new Muscle(nodes[0], nodes[1])
+	new Muscle(nodes[0], nodes[1])
 ];
 
 var creatures = [
@@ -102,14 +107,13 @@ var addNodePressed = false;
 var attachMusclePressed = false;
 var addLimbPressed = false;
 
-function draw(container, ctx, nodes, muscles) {
+function draw(container, ctx, nodes, creatureMuscles) {
 
 	//draw in the container
 	ctx.fillStyle = "#000000";
 	ctx.fillRect(container.y, container.x, container.width, container.height);
 
 	// for loop to draw all objects of nodes 
-	//TODO: Change loop to include new creatures 
 	for (let i = 0; i < creatures.length; i++) {
 
 		var creatureNodes = creatures[i].nodes;
@@ -131,22 +135,22 @@ function draw(container, ctx, nodes, muscles) {
 				ctx.stroke();
 			}
 		}
-	}
-
-	//loop and draw every muscle
-	for (i = 0; i < muscles.length; i++) {
-		ctx.beginPath();
-		ctx.moveTo(muscles[i].node1x, muscles[i].node1y);
-		ctx.lineTo(muscles[i].node2x, muscles[i].node2y);
-		ctx.strokeStyle = muscles[i].color;
-		ctx.lineWidth = muscles[i].width;
-		ctx.closePath();
-		ctx.stroke();
+		creatureMuscles = creatures[i].muscles;
+		//loop and draw every muscle
+		for (let i = 0; i < creatureMuscles.length; i++) {
+			ctx.beginPath();
+			ctx.moveTo(creatureMuscles[i].node1x, creatureMuscles[i].node1y);
+			ctx.lineTo(creatureMuscles[i].node2x, creatureMuscles[i].node2y);
+			ctx.strokeStyle = creatureMuscles[i].color;
+			ctx.lineWidth = creatureMuscles[i].width;
+			ctx.closePath();
+			ctx.stroke();
+		}
 	}
 }
 
 //Handle moving a node with mousedrag
-function handleMouseDrag(canvas, nodes) {
+function handleMouseDrag(canvas, creatureNodes) {
 	var isDrag = false;
 	var dragNode;
 	var offset = {
@@ -157,32 +161,35 @@ function handleMouseDrag(canvas, nodes) {
 	};
 
 
-	canvas.addEventListener("mousedown", function (e) {
+	canvas.addEventListener("mousedown", function(e) {
 		//mousedown then save the position in var x and y
 		var x = e.offsetX,
 			y = e.offsetY;
 
 		//loop through all the nodes to find the first node that is within radius of the mouse click
-		for (var i in nodes) {
+		for (let i = 0; i < creatures.length; i++) {
+			var creatureNodes = creatures[i].nodes;
 
-			if (Math.pow(x - nodes[i].x, 2) + Math.pow(y - nodes[i].y, 2) < Math.pow(nodes[i].r, 2)) {
-				isDrag = true;
-				dragNode = nodes[i];
+			for (let i = 0; i < creatureNodes.length; i++) {
+				if (Math.pow(x - creatureNodes[i].x, 2) + Math.pow(y - creatureNodes[i].y, 2) < Math.pow(creatureNodes[i].r, 2)) {
+					isDrag = true;
+					dragNode = creatureNodes[i];
 
-				//offset.x&y = where the node is currently
-				//offset x0&y0 = where the user clicked
-				offset = {
-					x: dragNode.x,
-					y: dragNode.y,
-					x0: x,
-					y0: y
-				};
-				return;
+					//offset.x&y = where the node is currently
+					//offset x0&y0 = where the user clicked
+					offset = {
+						x: dragNode.x,
+						y: dragNode.y,
+						x0: x,
+						y0: y
+					};
+					return;
+				}
 			}
 		}
 	});
 	// when mouse moves and isDrag is true, move the node's position
-	canvas.addEventListener("mousemove", function (e) {
+	canvas.addEventListener("mousemove", function(e) {
 		/*when the user moves the mouse, take the difference of where his mouse is right now and where the user clicked.
 		Then, add that to where the node is right now to find the correct placement of the node without centering on your mouse 
 		*/
@@ -192,11 +199,11 @@ function handleMouseDrag(canvas, nodes) {
 		}
 	});
 
-	canvas.addEventListener("mouseup", function (e) {
+	canvas.addEventListener("mouseup", function(e) {
 		isDrag = false;
 	});
 
-	canvas.addEventListener("mouseleave", function (e) {
+	canvas.addEventListener("mouseleave", function(e) {
 		isDrag = false;
 	});
 }
@@ -206,7 +213,7 @@ function handleMouseClick(canvas, nodes, muscles) {
 	var highlighted;
 	var highlightedNode;
 
-	canvas.addEventListener("mousedown", function (e) {
+	canvas.addEventListener("mousedown", function(e) {
 		var x = e.offsetX,
 			y = e.offsetY;
 
@@ -214,56 +221,101 @@ function handleMouseClick(canvas, nodes, muscles) {
 
 		for (let i = 0; i < creatures.length; i++) {
 
-			var creaturesNodes = creatures[i].nodes;
+			var creatureNodes = creatures[i].nodes;
 
-			for (let i = 0; i < creaturesNodes.length; i++) {
+			for (let i = 0; i < creatureNodes.length; i++) {
 				// check if click is within radius of a node, if it is, highlight and set highlight boolean to true.
 
-				if (Math.pow(x - creaturesNodes[i].x, 2) + Math.pow(y - creaturesNodes[i].y, 2) < Math.pow(creaturesNodes[i].r, 2)) {
-					var clickedNode = creaturesNodes[i];
+				if (Math.pow(x - creatureNodes[i].x, 2) + Math.pow(y - creatureNodes[i].y, 2) < Math.pow(creatureNodes[i].r, 2)) {
+					var clickedNode = creatureNodes[i];
 
 					if (addNodePressed) {
 						console.log("Not valid. Cannot add a node on top of another node.");
 						loopbreak = true;
 						break;
-					} else if (addLimbPressed) {
+					}
+					else if (addLimbPressed) {
 						console.log("Not valid. Cannot add a limb on top of another node.");
 						loopbreak = true;
 						break;
-					} else if (attachMusclePressed) {
+					}
+					//TODO: Merge the creature numbers together 
+					else if (attachMusclePressed) {
 						if (highlightedNode == clickedNode) {
 							console.log("Not valid. Cannot attach muscle to the same node.");
 							loopbreak = true;
 							break;
-						} else {
-							var newMuscle = new Muscle(highlightedNode, clickedNode);
-							muscles.push(newMuscle);
-							attachMuscle();
-							highlightedNode.highlight = false;
-							highlighted = false;
-							devTools(nodes, true, false, false, false);
+						}
+						else {
+							var newMuscle;
+
+							if (highlightedNode.parentCreature.creatureNumber == clickedNode.parentCreature.creatureNumber) {
+								newMuscle = new Muscle(highlightedNode, clickedNode);
+								highlightedNode.parentCreature.muscles.push(newMuscle);
+								attachMuscle();
+								highlightedNode.highlight = false;
+								highlighted = false;
+								devTools(true, false, false, false);
+							}
+							else {
+								var newNodes = [];
+								var newMuscles = [];
+
+								if (highlightedNode.parentCreature.creatureNumber > clickedNode.parentCreature.creatureNumber) {
+									highlightedNode.parentCreature.nodes.forEach(function(node) {
+										newNodes.push(node);
+									});
+									highlightedNode.parentCreature.muscles.forEach(function(muscle) {
+										newMuscles.push(muscle);
+									});
+									newMuscle = new Muscle(highlightedNode, clickedNode);
+									clickedNode.parentCreature.muscles.push(newMuscle);
+									clickedNode.parentCreature.muscles = clickedNode.parentCreature.muscles.concat(newMuscles);
+									creatures.splice(creatures.indexOf(highlightedNode.parentCreature), 1);
+									clickedNode.parentCreature.addNewNodes(newNodes);
+								}
+								else {
+									clickedNode.parentCreature.nodes.forEach(function(node) {
+										newNodes.push(node);
+										console.log("Clicked node is bigger.");
+									});
+									clickedNode.parentCreature.muscles.forEach(function(muscle) {
+										newMuscles.push(muscle);
+									});
+									newMuscle = new Muscle(highlightedNode, clickedNode);
+									highlightedNode.parentCreature.muscles.push(newMuscle);
+									highlightedNode.parentCreature.muscles = highlightedNode.parentCreature.muscles.concat(newMuscles);
+									creatures.splice(creatures.indexOf(clickedNode.parentCreature), 1);
+									highlightedNode.parentCreature.addNewNodes(newNodes);
+								}
+								highlightedNode.highlight = false;
+								attachMuscle();
+								devTools(true, false, false, false);
+							}
 						}
 					}
 					//no button pressed - highlight/unhighlight node
 					else {
-						if (highlighted || creaturesNodes[i].highlight) {
-							if (highlightedNode != nodes[i]) {
+						if (highlighted || creatureNodes[i].highlight) {
+							if (highlightedNode != creatureNodes[i]) {
 								highlightedNode.highlight = false;
-								highlightedNode = creaturesNodes[i];
+								highlightedNode = creatureNodes[i];
 								highlightedNode.highlight = true;
-								devTools(nodes, false, true, true, true);
-							} else {
-								highlightedNode = creaturesNodes[i];
+								devTools(false, true, true, true);
+							}
+							else {
+								highlightedNode = creatureNodes[i];
 								highlightedNode.highlight = false;
 								highlighted = false;
 								highlightedNode = undefined;
-								devTools(nodes, true, false, false, false);
+								devTools(true, false, false, false);
 							}
-						} else {
-							highlightedNode = creaturesNodes[i];
+						}
+						else {
+							highlightedNode = creatureNodes[i];
 							highlightedNode.highlight = true;
 							highlighted = true;
-							devTools(nodes, false, true, true, true);
+							devTools(false, true, true, true);
 						}
 						loopbreak = true;
 						break;
@@ -276,37 +328,38 @@ function handleMouseClick(canvas, nodes, muscles) {
 		if (!loopbreak) {
 			loopbreak = false;
 			var newNode;
-			//TODO: Handle adding a new creature when adding a new node
 			if (addNodePressed) {
 				newNode = new Node(x, y);
-				var newNodes = [];
-				var newMuscles = [];
+				let newNodes = [];
+				let newMuscles = [];
 				newNodes.push(newNode);
 				var newCreature = new Creature(newNodes, newMuscles);
 				creatures.push(newCreature);
 				addNode();
 				addNodePressed = false;
-				devTools(nodes, true, false, false, false);
-			} else if (addLimbPressed) {
+				devTools(true, false, false, false);
+			}
+			else if (addLimbPressed) {
 				newNode = new Node(x, y);
-				var newMuscle = new Muscle(newNode, highlightedNode);
-				nodes.push(newNode);
-				muscles.push(newMuscle);
+				let newMuscle = new Muscle(newNode, highlightedNode);
+				highlightedNode.parentCreature.addNewNode(newNode);
+				highlightedNode.parentCreature.muscles.push(newMuscle);
 				addLimb();
 				addLimbPressed = false;
 				highlightedNode.highlight = false;
 				highlighted = false;
 				highlightedNode = undefined;
-				devTools(nodes, true, false, false, false);
+				devTools(true, false, false, false);
 			}
 		}
 	});
 }
 
 //Handle Devtools
-function devTools(nodes, addNode, removeNode, attachMuscle, addLimb) {
+function devTools(addNode, removeNode, attachMuscle, addLimb) {
 
-	var selected = document.getElementById("selected");
+	var creatureNumberHTML = document.getElementById("creatureNumber");
+	var selectedHTML = document.getElementById("selected");
 	var addNodeB = document.getElementById("addNode");
 	var removeNodeB = document.getElementById("removeNode");
 	var attachMuscleB = document.getElementById("attachMuscle");
@@ -317,16 +370,22 @@ function devTools(nodes, addNode, removeNode, attachMuscle, addLimb) {
 	attachMuscleB.disabled = (attachMuscle) ? false : true;
 	addLimbB.disabled = (addLimb) ? false : true;
 
+	for (let i = 0; i < creatures.length; i++) {
+		var creatureNumber = i;
+		var creatureNodes = creatures[i].nodes;
 
-	for (var i = 0; i < nodes.length; i++) {
-		if (nodes[i].highlight == true) {
-			selected.innerHTML = `Selected: ${i} node`;
-			return;
-		} else {
-			selected.innerHTML = "Selected: None";
+		for (let i = 0; i < creatureNodes.length; i++) {
+			if (creatureNodes[i].highlight == true) {
+				selectedHTML.innerHTML = `Selected: ${i} node`;
+				creatureNumberHTML.innerHTML = `Creature number: ${creatureNumber}`;
+				return;
+			}
+			else {
+				creatureNumberHTML.innerHTML = "Creature number: -";
+				selectedHTML.innerHTML = "Selected: None";
+			}
 		}
 	}
-
 }
 
 //Handle add node button
@@ -336,7 +395,8 @@ function addNode() {
 	if (addNodePressed) {
 		addNodePressed = false;
 		addNodeB.style.background = "";
-	} else {
+	}
+	else {
 		addNodePressed = true;
 		addNodeB.style.backgroundColor = "#808080";
 		//and unhighlight
@@ -347,23 +407,24 @@ function addNode() {
 function removeNode() {
 	for (let i = 0; i < creatures.length; i++) {
 		var creatureNodes = creatures[i].nodes;
+		var creatureMuscles = creatures[i].muscles;
 
 		for (let i = 0; i < creatureNodes.length; i++) {
 			if (creatureNodes[i].highlight == true) {
 
-				for (var x = 0; x < muscles.length; x++) {
-					if (muscles[x].node1 == creatureNodes[i] || muscles[x].node2 == creatureNodes[i]) {
-						muscles.splice(x, 1);
-						x--;
+				let highlightedNode = creatureNodes[i];
+
+				for (let i = 0; i < creatureMuscles.length; i++) {
+					if (creatureMuscles[i].node1 == highlightedNode || creatureMuscles[i].node2 == highlightedNode) {
+						creatureMuscles.splice(i, 1);
+						i--;
 					}
 				}
 				creatureNodes.splice(i, 1);
 			}
 		}
 	}
-
-
-	devTools(nodes, true, false, false, false);
+	devTools(true, false, false, false);
 }
 
 //Handle attach muscle button
@@ -373,7 +434,8 @@ function attachMuscle() {
 	if (attachMusclePressed) {
 		attachMusclePressed = false;
 		attachMuscleB.style.background = "";
-	} else {
+	}
+	else {
 		attachMusclePressed = true;
 		attachMuscleB.style.backgroundColor = "#808080";
 	}
@@ -386,7 +448,8 @@ function addLimb() {
 	if (addLimbPressed) {
 		addLimbPressed = false;
 		addLimbB.style.background = "";
-	} else {
+	}
+	else {
 		addLimbPressed = true;
 		addLimbB.style.backgroundColor = "#808080";
 	}
