@@ -346,7 +346,7 @@ function handleMouseClick(canvas, nodes, muscles) {
 							}
 						}
 					}
-					//no button pressed - highlight/unhighlight node
+					//no button pressed - highlight/unhighlight node or muscle
 					else {
 						if (muscleIsHighlighted) {
 							muscleIsHighlighted = false;
@@ -411,18 +411,7 @@ function handleMouseClick(canvas, nodes, muscles) {
 				devTools(true, false, false, false);
 			}
 			else {
-				if (nodeIsHighlighted) {
-					highlightedNode.highlight = false;
-					nodeIsHighlighted = false;
-					highlightedNode = undefined;
-					devTools(true, false, false, false);
-				}
-				else if (muscleIsHighlighted) {
-					highlightedMuscle.highlight = false;
-					muscleIsHighlighted = false;
-					highlightedMuscle = undefined;
-					devTools(true, false, false, false);
-				}
+
 
 				for (let i = 0; i < creatures.length; i++) {
 					var creature = creatures[i];
@@ -438,13 +427,20 @@ function handleMouseClick(canvas, nodes, muscles) {
 							creature.muscles[i].highlight = true;
 							muscleIsHighlighted = true;
 							highlightedMuscle = creature.muscles[i];
+							if (nodeIsHighlighted) {
+								highlightedNode.highlight = false;
+								nodeIsHighlighted = false;
+								highlightedNode = undefined;
+							}
 							devTools(false, false, false, false, true, true);
+							break;
 						}
 						else if (ctx.isPointInStroke(x, y) && creature.muscles[i].highlight == true) {
 							creature.muscles[i].highlight = false;
 							muscleIsHighlighted = false;
 							highlightedMuscle = undefined;
 							devTools(true, false, false, false, false, false);
+							break;
 						}
 					}
 				}
@@ -473,33 +469,34 @@ function devTools(addNode, removeNode, attachMuscle, addLimb, increaseLength, de
 	increaseLengthB.disabled = (increaseLength) ? false : true || false;
 	decreaseLengthB.disabled = (decreaseLength) ? false : true || false;
 
-	for (let i = 0; i < creatures.length; i++) {
-		var creatureNumber = i;
-		var creature = creatures[i];
-		var selected = false;
+	loop:
+		for (let i = 0; i < creatures.length; i++) {
+			var creatureNumber = i;
+			var creature = creatures[i];
+			var selected = false;
 
-		for (let i = 0; i < creature.nodes.length; i++) {
-			if (creature.nodes[i].highlight == true) {
-				selectedHTML.innerHTML = `Selected: ${i} node`;
-				creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
-				selected = true;
-				break;
+			for (let i = 0; i < creature.nodes.length; i++) {
+				if (creature.nodes[i].highlight == true) {
+					selectedHTML.innerHTML = `Selected: ${i} node`;
+					creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
+					selected = true;
+					break loop;
+				}
+			}
+			for (let i = 0; i < creature.muscles.length; i++) {
+				if (creature.muscles[i].highlight) {
+					selectedHTML.innerHTML = `Selected: ${i} muscle`;
+					creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
+					selected = true;
+					break loop;
+				}
+			}
+
+			if (!selected) {
+				creatureNumberHTML.innerHTML = "Creature Number: -";
+				selectedHTML.innerHTML = "Selected: None";
 			}
 		}
-		for (let i = 0; i < creature.muscles.length; i++) {
-			if (creature.muscles[i].highlight) {
-				selectedHTML.innerHTML = `Selected: ${i} muscle`;
-				creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
-				selected = true;
-				break;
-			}
-		}
-
-		if (!selected) {
-			creatureNumberHTML.innerHTML = "Creature Number: -";
-			selectedHTML.innerHTML = "Selected: None";
-		}
-	}
 }
 
 //Handle add node button
@@ -570,8 +567,16 @@ function addLimb() {
 }
 
 //TODO: Function to check if any offense nodes are in the vicinity of other creatures to eat
-function checkIfEat() {
-	
+function checkIfEat(x1, y1, x2, y2, radius) {
+	//radius =20
+	var dx = x1 - x2;
+	var dy = y1 - y2;
+	var dist = Math.sqrt(dx * dx + dy * dy);
+
+	if (dist < radius) {
+		console.log("Has eaten.")
+	}
+
 }
 
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
