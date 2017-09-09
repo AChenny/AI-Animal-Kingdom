@@ -9,25 +9,37 @@
 
 <body>
 	<!--TODO: Adjust the size of the canvas to fit the window-->
-	<canvas id="canvas" width="1500" , height="600"></canvas>
+	<canvas id="canvas" width="1500" height="600"></canvas>
 
 	<!--TODO: Create buttons for all devtools under the canvas-->
 	<!--TODO: Make a container for all devtools under the canvas, then add all the functionality to it after-->
 	<div id="devTools">
 		<section id="info">
 			<p>Info</p>
-			<p id="creatureNumber">Creature Number: </p> 
+			<p id="creatureNumber">Creature Number: -</p>
 			<p id="selected">Selected: </p>
 		</section>
 
 		<section id="commands">
 			<p>Commands</p>
-			<button type="button" id="addNode" onclick = "addNode()">Add node</button>
-			<button type="button" id="removeNode" disabled=true onclick = "removeNode()">Remove node</button>
-			<button type="button" id="attachMuscle" disabled=true onclick = "attachMuscle()">Attach muscle</button>
-			<button type="button" id="addLimb" disabled=true onclick = "addLimb()">Add Limb</button>
+			<button type="button" id="addNode" onclick="addNode()">Add node</button>
+			<button type="button" id="removeNode" disabled=true onclick="removeNode()">Remove node</button>
+			<button type="button" id="attachMuscle" disabled=true onclick="attachMuscle()">Attach muscle</button>
+			<button type="button" id="addLimb" disabled=true onclick="addLimb()">Add Limb</button>
+			
+			<p>&nbsp;</p>
+			<button type="button" id="removeMuscle" disabled=t rue>Remove Muscle</button>
+			<div>
+				<button type="button" id="increaseLength" disabled=true>&uarr;</button>
+				<p id="muscleLengthT">Muscle Length</p>
+				<button type="button" id="decreaseLength" disabled=true>&darr;</button>
+			</div>
+
+
+
 		</section>
 	</div>
+
 	<script src="scripts/script.js"></script>
 </body>
 

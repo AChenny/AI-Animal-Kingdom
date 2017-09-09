@@ -1,7 +1,7 @@
 /*jshint esversion: 6 */
-//draw everything on canvas
 //TODO: Change use of canvas to a container and moving elements around to avoid the buffer of frame drawing
-
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
 //Node class
 class Node {
 	constructor(x, y, r, color, highlight, highlightColor) {
@@ -11,17 +11,30 @@ class Node {
 		this.color = color || "#ff0";
 		this.highlight = highlight || false;
 		this.highlightColor = highlightColor || "#0000FF";
+		//		this.nodeType = nodeType; 
 	}
+	//TODO: Add types of nodes - offense, defense, movement
+	eat(otherCreature) {
+		for (let i = 0; i < creatures.length; i++) {
+			if (otherCreature == creatures[i]) {
+				creatures.splice(i, 1);
+				break;
+			}
+		}
+	}
+
+
 }
 
 //Muscle class
 class Muscle {
-	constructor(node1, node2, width, color) {
+	constructor(node1, node2, width, color, highlight, highlightColor) {
 		this.node1 = node1;
 		this.node2 = node2;
-		this.width = width || 5;
+		this.width = width || 10;
 		this.color = color || "#f00";
-
+		this.highlight = highlight || false;
+		this.highlightColor = highlightColor || "#0000FF";
 
 		//Properties of the nodes this muscle attaches to 
 		Object.defineProperties(this, {
@@ -50,7 +63,7 @@ class Muscle {
 			node2y: {
 				"get": () => this.node2.y,
 				"set": y => {
-					this.node2.x = y;
+					this.node2.y = y;
 				}
 			}
 		});
@@ -111,7 +124,7 @@ function draw(container, ctx, nodes, creatureMuscles) {
 
 	//draw in the container
 	ctx.fillStyle = "#000000";
-	ctx.fillRect(container.y, container.x, container.width, container.height);
+	ctx.fillRect(container.x, container.y, container.width, container.height);
 
 	// for loop to draw all objects of nodes 
 	for (let i = 0; i < creatures.length; i++) {
@@ -145,8 +158,45 @@ function draw(container, ctx, nodes, creatureMuscles) {
 			ctx.lineWidth = creatureMuscles[i].width;
 			ctx.closePath();
 			ctx.stroke();
+
+			//check if muscle needs to be highlighted
+			if (creatureMuscles[i].highlight) {
+				creatureMuscles[i].color = "#0000FF";
+			}
+			else {
+				creatureMuscles[i].color = "#f00";
+			}
 		}
 	}
+}
+
+//Handle checking if click is on stroke
+function handleStrokeCheck() {
+	canvas.addEventListener("mousedown", function(e) {
+		var x = e.clientX,
+			y = e.clientY;
+
+		for (let i = 0; i < creatures.length; i++) {
+			var creature = creatures[i];
+
+			for (let i = 0; i < creature.muscles.length; i++) {
+				ctx.beginPath();
+				ctx.moveTo(creature.muscles[i].node1x, creature.muscles[i].node1y);
+				ctx.lineTo(creature.muscles[i].node2x, creature.muscles[i].node2y);
+				ctx.lineWidth = creature.muscles[i].width;
+				ctx.closePath();
+
+				if (ctx.isPointInStroke(x, y) && creature.muscles[i].highlight == false) {
+					creature.muscles[i].highlight = true;
+				}
+
+				else if (ctx.isPointInStroke(x, y) && creature.muscles[i].highlight == true) {
+					creature.muscles[i].highlight = false;
+				}
+
+			}
+		}
+	});
 }
 
 //Handle moving a node with mousedrag
@@ -210,8 +260,10 @@ function handleMouseDrag(canvas, creatureNodes) {
 
 //Handle highlighting and button functionality
 function handleMouseClick(canvas, nodes, muscles) {
-	var highlighted;
+	var nodeIsHighlighted;
 	var highlightedNode;
+	var muscleIsHighlighted;
+	var highlightedMuscle;
 
 	canvas.addEventListener("mousedown", function(e) {
 		var x = e.offsetX,
@@ -234,12 +286,12 @@ function handleMouseClick(canvas, nodes, muscles) {
 						loopbreak = true;
 						break;
 					}
+
 					else if (addLimbPressed) {
 						console.log("Not valid. Cannot add a limb on top of another node.");
 						loopbreak = true;
 						break;
 					}
-					//TODO: Merge the creature numbers together 
 					else if (attachMusclePressed) {
 						if (highlightedNode == clickedNode) {
 							console.log("Not valid. Cannot attach muscle to the same node.");
@@ -254,7 +306,7 @@ function handleMouseClick(canvas, nodes, muscles) {
 								highlightedNode.parentCreature.muscles.push(newMuscle);
 								attachMuscle();
 								highlightedNode.highlight = false;
-								highlighted = false;
+								nodeIsHighlighted = false;
 								devTools(true, false, false, false);
 							}
 							else {
@@ -296,25 +348,32 @@ function handleMouseClick(canvas, nodes, muscles) {
 					}
 					//no button pressed - highlight/unhighlight node
 					else {
-						if (highlighted || creatureNodes[i].highlight) {
-							if (highlightedNode != creatureNodes[i]) {
+						if (muscleIsHighlighted) {
+							muscleIsHighlighted = false;
+							highlightedMuscle.highlight = false;
+							highlightedMuscle = undefined;
+						}
+
+						if (nodeIsHighlighted || creatureNodes[i].highlight) {
+
+							if (highlightedNode != creatureNodes[i]) { //Highlights another node if its not the same node
 								highlightedNode.highlight = false;
 								highlightedNode = creatureNodes[i];
 								highlightedNode.highlight = true;
 								devTools(false, true, true, true);
 							}
-							else {
+							else { // Unhighlights the node if clicked twice
 								highlightedNode = creatureNodes[i];
 								highlightedNode.highlight = false;
-								highlighted = false;
+								nodeIsHighlighted = false;
 								highlightedNode = undefined;
 								devTools(true, false, false, false);
 							}
 						}
-						else {
+						else { // Highlights the node
 							highlightedNode = creatureNodes[i];
 							highlightedNode.highlight = true;
-							highlighted = true;
+							nodeIsHighlighted = true;
 							devTools(false, true, true, true);
 						}
 						loopbreak = true;
@@ -347,43 +406,98 @@ function handleMouseClick(canvas, nodes, muscles) {
 				addLimb();
 				addLimbPressed = false;
 				highlightedNode.highlight = false;
-				highlighted = false;
+				nodeIsHighlighted = false;
 				highlightedNode = undefined;
 				devTools(true, false, false, false);
 			}
+			else {
+				if (nodeIsHighlighted) {
+					highlightedNode.highlight = false;
+					nodeIsHighlighted = false;
+					highlightedNode = undefined;
+					devTools(true, false, false, false);
+				}
+				else if (muscleIsHighlighted) {
+					highlightedMuscle.highlight = false;
+					muscleIsHighlighted = false;
+					highlightedMuscle = undefined;
+					devTools(true, false, false, false);
+				}
+
+				for (let i = 0; i < creatures.length; i++) {
+					var creature = creatures[i];
+
+					for (let i = 0; i < creature.muscles.length; i++) {
+						ctx.beginPath();
+						ctx.moveTo(creature.muscles[i].node1x, creature.muscles[i].node1y);
+						ctx.lineTo(creature.muscles[i].node2x, creature.muscles[i].node2y);
+						ctx.lineWidth = creature.muscles[i].width;
+						ctx.closePath();
+
+						if (ctx.isPointInStroke(x, y) && creature.muscles[i].highlight == false) {
+							creature.muscles[i].highlight = true;
+							muscleIsHighlighted = true;
+							highlightedMuscle = creature.muscles[i];
+							devTools(false, false, false, false, true, true);
+						}
+						else if (ctx.isPointInStroke(x, y) && creature.muscles[i].highlight == true) {
+							creature.muscles[i].highlight = false;
+							muscleIsHighlighted = false;
+							highlightedMuscle = undefined;
+							devTools(true, false, false, false, false, false);
+						}
+					}
+				}
+			}
+
 		}
 	});
 }
 
 //Handle Devtools
-function devTools(addNode, removeNode, attachMuscle, addLimb) {
-
+function devTools(addNode, removeNode, attachMuscle, addLimb, increaseLength, decreaseLength) {
+	//TODO: add remove Muscle functionality
 	var creatureNumberHTML = document.getElementById("creatureNumber");
 	var selectedHTML = document.getElementById("selected");
 	var addNodeB = document.getElementById("addNode");
 	var removeNodeB = document.getElementById("removeNode");
 	var attachMuscleB = document.getElementById("attachMuscle");
 	var addLimbB = document.getElementById("addLimb");
+	var increaseLengthB = document.getElementById("increaseLength");
+	var decreaseLengthB = document.getElementById("decreaseLength");
 
 	addNodeB.disabled = (addNode) ? false : true;
 	removeNodeB.disabled = (removeNode) ? false : true;
 	attachMuscleB.disabled = (attachMuscle) ? false : true;
 	addLimbB.disabled = (addLimb) ? false : true;
+	increaseLengthB.disabled = (increaseLength) ? false : true || false;
+	decreaseLengthB.disabled = (decreaseLength) ? false : true || false;
 
 	for (let i = 0; i < creatures.length; i++) {
 		var creatureNumber = i;
-		var creatureNodes = creatures[i].nodes;
+		var creature = creatures[i];
+		var selected = false;
 
-		for (let i = 0; i < creatureNodes.length; i++) {
-			if (creatureNodes[i].highlight == true) {
+		for (let i = 0; i < creature.nodes.length; i++) {
+			if (creature.nodes[i].highlight == true) {
 				selectedHTML.innerHTML = `Selected: ${i} node`;
-				creatureNumberHTML.innerHTML = `Creature number: ${creatureNumber}`;
-				return;
+				creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
+				selected = true;
+				break;
 			}
-			else {
-				creatureNumberHTML.innerHTML = "Creature number: -";
-				selectedHTML.innerHTML = "Selected: None";
+		}
+		for (let i = 0; i < creature.muscles.length; i++) {
+			if (creature.muscles[i].highlight) {
+				selectedHTML.innerHTML = `Selected: ${i} muscle`;
+				creatureNumberHTML.innerHTML = `Creature Number: ${creatureNumber}`;
+				selected = true;
+				break;
 			}
+		}
+
+		if (!selected) {
+			creatureNumberHTML.innerHTML = "Creature Number: -";
+			selectedHTML.innerHTML = "Selected: None";
 		}
 	}
 }
@@ -455,10 +569,13 @@ function addLimb() {
 	}
 }
 
+//TODO: Function to check if any offense nodes are in the vicinity of other creatures to eat
+function checkIfEat() {
+	
+}
+
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
 function main() {
-	var canvas = document.getElementById("canvas");
-	var ctx = canvas.getContext("2d");
 	var container = {
 		x: 0,
 		y: 0,
@@ -469,15 +586,12 @@ function main() {
 			return canvas.height;
 		}
 	};
-
+	//	handleStrokeCheck();
 	handleMouseDrag(canvas, nodes);
 	handleMouseClick(canvas, nodes, muscles);
-
 	// refresh and redraw with new properties in an updateframe infinite loop
 	function updateFrame() {
-		ctx.save();
 		draw(container, ctx, nodes, muscles);
-		ctx.restore();
 		requestAnimationFrame(updateFrame);
 	}
 	updateFrame();
