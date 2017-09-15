@@ -20,13 +20,13 @@
 			<p id="selected">Selected: </p>
 		</section>
 
-		<section id="commands">
-			<p>Commands</p>
+		<section id="menu">
+			<p>Menu</p>
 			<button type="button" id="addNode" onclick="addNode()">Add node</button>
 			<button type="button" id="removeNode" disabled=true onclick="removeNode()">Remove node</button>
 			<button type="button" id="attachMuscle" disabled=true onclick="attachMuscle()">Attach muscle</button>
 			<button type="button" id="addLimb" disabled=true onclick="addLimb()">Add Limb</button>
-			
+
 			<p>&nbsp;</p>
 			<button type="button" id="removeMuscle" disabled=t rue>Remove Muscle</button>
 			<div>
@@ -34,10 +34,59 @@
 				<p id="muscleLengthT">Muscle Length</p>
 				<button type="button" id="decreaseLength" disabled=true>&darr;</button>
 			</div>
-
-
-
 		</section>
+		<section id="commands">
+			<center>
+				<p>Commands</p>
+			</center>
+			<!--Buttons 1. Array number 2. Type= Node/muscle 3. Add to queue of commands-->
+			<form>
+				<div class="selection">
+					<select id="creatureSelection" name="creature">
+						<option selected disabled>Creature Number</option>
+					</select>
+				</div>
+				<div class="selection">
+					<select id="typeSelection" name="type">
+						<option selected disabled>Type</option>
+						<option value="muscle">Muscle</option>
+						<option value="node">Node</option>
+					</select>
+				</div>
+				<div class="selection">
+					<select id="arraySelection" name="array">
+						<option selected disabled>Array Number</option>
+					</select>
+				</div>
+				<input type="submit" value="Add To Queue">
+
+			</form>
+
+			<!--
+				<div class="dropdown">
+					<button id="creatureButton" onclick="dropDownMenu(id)" class="dropbtn">Creature</button>
+					<div id="creatureDropdown" class="dropdown-content">
+						<p>1</p>
+						<p>2</p>
+						<p>3</p>
+					</div>
+					<button id="typeButton" class="dropbtn" onclick="dropDownMenu(id)">Type</button>
+					<div id="typeDropdown" class="dropdown-content">
+						<p>Node</p>
+						<p>Muscle</p>
+					</div>
+					<button id="arrayButton" onclick="dropDownMenu(id)" class="dropbtn">i</button>
+					<div id="arrayDropdown" class="dropdown-content">
+						<p>1</p>
+						<p>2</p>
+						<p>3</p>
+					</div>
+				</div>
+				<button id="addToQueueB">+</button>
+			</center>
+-->
+		</section>
+
 	</div>
 
 	<script src="scripts/script.js"></script>

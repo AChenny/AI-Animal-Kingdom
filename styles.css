@@ -6,13 +6,51 @@
 	display: inline-block;
 	text-overflow: clip;
 	overflow: hidden;
-	margin-right: 200px;
+	margin-right: 100px;
+}
+
+#menu {
+	display: inline-block;
+	text-align: center;
+	margin-left: 100px;
 }
 
 #commands {
 	display: inline-block;
-	text-align: center;
-	margin-left: 200px;
+}
+
+/*Dropdown*/
+
+.dropdown-content {
+	display: none;
+	position: absolute;
+	background-color: #f9f9f9;
+	min-width: 5px;
+	overflow: auto;
+	box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+	z-index: 1;
+}
+
+.dropdown-content p {
+	display: block;
+	padding: 12px 16px;
+	background-color: white;
+	color: black;
+}
+
+.dropdown {
+	position: relative;
+	display: inline-block;
+}
+
+.show {
+	display: block;
+}
+#typeDropdown {
+	left: 73px;
+}
+#arrayDropdown {
+	left: 122px;
 }
 
 #devTools {
@@ -27,13 +65,19 @@ section {
 	vertical-align: top;
 }
 
-#increaseLength, #decreaseLength, #muscleLengthT {
-	display: inline;
+#commands {
+	width: 200px;
+}
+form {
+	display: block;
+}
+.selection {
+	margin-bottom: 10px;
 }
 
 
-
-
-
-
-
+#increaseLength,
+#decreaseLength,
+#muscleLengthT {
+	display: inline;
+}

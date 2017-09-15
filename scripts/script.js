@@ -4,16 +4,16 @@ var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 //Node class
 class Node {
-	constructor(x, y, r, color, highlight, highlightColor) {
+	constructor(x, y, r, color, highlight, highlightColor, nodeType) {
 		this.x = x;
 		this.y = y;
 		this.r = r || 20;
 		this.color = color || "#ff0";
 		this.highlight = highlight || false;
 		this.highlightColor = highlightColor || "#0000FF";
-		//		this.nodeType = nodeType; 
+		this.nodeType = nodeType || "blank";
 	}
-	//TODO: Add types of nodes - offense, defense, movement
+	//TODO: **priority** Add movement node and incorporate it with muscle to move the whole creature
 	eat(otherCreature) {
 		for (let i = 0; i < creatures.length; i++) {
 			if (otherCreature == creatures[i]) {
@@ -22,8 +22,6 @@ class Node {
 			}
 		}
 	}
-
-
 }
 
 //Muscle class
@@ -35,6 +33,7 @@ class Muscle {
 		this.color = color || "#f00";
 		this.highlight = highlight || false;
 		this.highlightColor = highlightColor || "#0000FF";
+		this.parentCreature;
 
 		//Properties of the nodes this muscle attaches to 
 		Object.defineProperties(this, {
@@ -65,14 +64,119 @@ class Muscle {
 				"set": y => {
 					this.node2.y = y;
 				}
+			},
+
+			maxLength: {
+				"get": () => this.maxLength,
+				"set": maxLength => {
+					this.maxLength = maxLength;
+				}
+			},
+
+			length: {
+				"get": () => {
+					var dx = (this.node1.x - this.node2.x),
+						dy = (this.node1.y - this.node2.y);
+					let dist = Math.sqrt((dx * dx) + (dy * dy));
+					return dist;
+				}
 			}
-		});
+		})
 	}
+
+	expandMuscle(maxLength) {
+		var expansion = 1;
+		var self = this;
+		var anchor;
+
+		if (this.node1.nodeType = "movement") {
+			anchor = this.node1;
+		}
+		else if (this.node2.nodeType = "movement") {
+			anchor = this.node2;
+		}
+		else {
+			anchor = false;
+		}
+
+		if (anchor != false) {
+			//anchor is not equal to false, which means one of the nodes is a movement node
+			//if the node is activated, then move every other node in the direction of the other node(not the movement node)
+
+			if (anchor = this.node1) {
+				var anchorInterval = setInterval(function() {
+					let addDX = expansion; // will not have to divide by 2 because im only pushing towards one way
+					let addDY = expansion * ((self.node2.y - self.node1.y) / (self.node2.x - self.node1.x));
+
+					if (self.node1.x + self.node1.y < self.node2.x + self.node2.y) {
+						for (let i = 0; i < self.parentCreature.nodes.length; i++) {
+							if (self.parentCreature.nodes[i] == self.node1) {
+								continue;
+							}
+							self.parentCreature.nodes[i].x += addDX;
+							self.parentCreature.nodes[i].y += addDY;
+						}
+						expansion += expansion;
+						if (expansion > maxLength) {
+							clearInterval(anchorInterval);
+						}
+					}
+					else {
+						for (let i = 0; i < self.parentCreature.nodes.length; i++) {
+							if (self.parentCreature.nodes[i] == self.node1) {
+								continue;
+							}
+							self.parentCreature.nodes[i].x -= addDX;
+							self.parentCreature.nodes[i].y -= addDY;
+						}
+						expansion += expansion;
+						if (expansion > maxLength) {
+							clearInterval(anchorInterval);
+						}
+					}
+				}, 32)
+			}
+		}
+
+		//setIntervals for each way to expand?
+
+		//		var interval = setInterval(function() {
+		//			//amount of pixels to add / 2 for each node * slope(rise/run)
+		//			let addDX = (expansion / 2);
+		//			let addDY = (expansion / 2) * ((self.node2.y - self.node1.y) / (self.node2.x - self.node1.x));
+		//
+		//			//To check which node is closer to the upper left corner 
+		//			if (self.node1.x + self.node1.y > self.node2.x + self.node2.y) {
+		//				self.node1.x += addDX;
+		//				self.node1.y += addDY;
+		//				self.node2.x -= addDX;
+		//				self.node2.y -= addDY;
+		//			}
+		//			else {
+		//				self.node2.x += addDX;
+		//				self.node2.y += addDY;
+		//				self.node1.x -= addDX;
+		//				self.node1.y -= addDY;
+		//			}
+		//			expansion += expansion;
+		//			if (expansion > maxLength) {
+		//				clearInterval(interval);
+		//			}
+		//		}, 32);
+	}
+	//TODO: **priority** Contract muscle function or work it into the expand muscle function
 }
 
+//TODO: move these functions within the creature class
 function setParentForNodes() {
 	this.nodes.forEach(node => {
 		node.parentCreature = this;
+	});
+}
+
+function setParentForMuscles() {
+	this.muscles.forEach(muscle => {
+		muscle.parentCreature = this;
 	});
 }
 
@@ -82,6 +186,7 @@ class Creature {
 		this.muscles = muscles;
 		this.nodeColors = nodeColors || "#ff0";
 		setParentForNodes.call(this);
+		setParentForMuscles.call(this);
 
 		Object.defineProperties(this, {
 
@@ -411,8 +516,6 @@ function handleMouseClick(canvas, nodes, muscles) {
 				devTools(true, false, false, false);
 			}
 			else {
-
-
 				for (let i = 0; i < creatures.length; i++) {
 					var creature = creatures[i];
 
@@ -445,7 +548,6 @@ function handleMouseClick(canvas, nodes, muscles) {
 					}
 				}
 			}
-
 		}
 	});
 }
@@ -567,16 +669,106 @@ function addLimb() {
 }
 
 //TODO: Function to check if any offense nodes are in the vicinity of other creatures to eat
-function checkIfEat(x1, y1, x2, y2, radius) {
-	//radius =20
-	var dx = x1 - x2;
-	var dy = y1 - y2;
-	var dist = Math.sqrt(dx * dx + dy * dy);
+function checkIfEat(node1, node2, radius) {
+	//radius is around 37-38 for this formula to work
+	var x1 = node1.x,
+		y1 = node1.y,
+		x2 = node2.x,
+		y2 = node2.y;
 
-	if (dist < radius) {
-		console.log("Has eaten.")
+	var dx = x2 - x1;
+	var dy = y2 - y1;
+	var radiusSum = radius + radius;
+	var dist = Math.sqrt((dx * dx) + (dy * dy));
+
+
+	if (dist < radiusSum) {
+		console.log("Has eaten.");
+	}
+	else if (dist > radiusSum) {
+		console.log("Has not eaten.");
+	}
+}
+
+//Dropdown menu for commands queue
+function dropDownMenu(id) {
+	var arrayDropdown = document.getElementById("arrayDropdown");
+	var typeDropdown = document.getElementById("typeDropdown");
+	var creatureDropdown = document.getElementById("creatureDropdown");
+
+	if (id == "arrayButton") {
+		//if type content is showing, remove it
+		if (typeDropdown.classList.contains("show")) {
+			typeDropdown.classList.remove("show");
+		}
+		else if (creatureDropdown.classList.contains("show")) {
+			creatureDropdown.classList.remove("show");
+		}
+		arrayDropdown.classList.toggle("show");
+
+	}
+	else if (id == "typeButton") {
+		if (arrayDropdown.classList.contains("show")) {
+			arrayDropdown.classList.remove("show");
+		}
+		else if (creatureDropdown.classList.contains("show")) {
+			creatureDropdown.classList.remove("show");
+		}
+		typeDropdown.classList.toggle("show");
+	}
+	else if (id == "creatureButton") {
+		if (arrayDropdown.classList.contains("show")) {
+			arrayDropdown.classList.remove("show");
+		}
+		else if (typeDropdown.classList.contains("show")) {
+			typeDropdown.classList.remove("show");
+		}
+		creatureDropdown.classList.toggle("show");
+
+
 	}
 
+}
+
+window.onclick = function(event) {
+	if (!event.target.matches('.dropbtn')) {
+
+		var dropdowns = document.getElementsByClassName("dropdown-content");
+		var i;
+		for (i = 0; i < dropdowns.length; i++) {
+			var openDropdown = dropdowns[i];
+			if (openDropdown.classList.contains('show')) {
+				openDropdown.classList.remove('show');
+			}
+		}
+	}
+}
+
+function populateSelections() {
+	var creatureSel = document.getElementById("creatureSelection");
+	var typeSelection = document.getElementById("typeSelection");
+	var arraySelection = document.getElementById("arraySelection");
+	var cFragment = document.createDocumentFragment();
+	var aFragment = document.createDocumentFragment();
+
+	creatures.forEach(function(creature, index) {
+		let opt = document.createElement('option');
+		opt.innerHTML = creature.creatureNumber;
+		opt.value = index;
+		cFragment.appendChild(opt);
+	})
+	if (typeSelection.options[typeSelection.selectedIndex].value == "muscle") {
+		var selectedCreatureIndex = creatureSelection.options[creatureSelection.selectedIndex].value;
+
+		creatures[selectedCreatureIndex].muscles.forEach(function(muscle, index) {
+			let opt = document.createElement('option');
+			opt.innerHTML = index;
+			opt.value = muscle;
+			aFragment.appendChild(opt);
+		});
+	}
+	arraySelection.appendChild(aFragment);
+	creatureSel.appendChild(cFragment);
 }
 
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
@@ -594,10 +786,12 @@ function main() {
 	//	handleStrokeCheck();
 	handleMouseDrag(canvas, nodes);
 	handleMouseClick(canvas, nodes, muscles);
+	populateSelections();
 	// refresh and redraw with new properties in an updateframe infinite loop
 	function updateFrame() {
 		draw(container, ctx, nodes, muscles);
 		requestAnimationFrame(updateFrame);
+
 	}
 	updateFrame();
 }
