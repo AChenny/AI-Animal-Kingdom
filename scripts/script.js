@@ -88,57 +88,57 @@ class Muscle {
 		var expansion = 1;
 		var self = this;
 		var anchor;
+		var mNode;
+		//TODO: Implement dragging when contracting muscle
 
 		if (this.node1.nodeType = "movement") {
-			anchor = this.node1;
+			anchor = this.node2;
+			mNode = this.node1;
 		}
 		else if (this.node2.nodeType = "movement") {
-			anchor = this.node2;
+			anchor = this.node1;
+			mNode = this.node2;
 		}
 		else {
 			anchor = false;
 		}
-
+		
 		if (anchor != false) {
-			//anchor is not equal to false, which means one of the nodes is a movement node
-			//if the node is activated, then move every other node in the direction of the other node(not the movement node)
+			var startX = mNode.x;
+			var startY = mNode.y;
+			
+			var interval = setInterval(function() {
+				var slope = (mNode.y - anchor.y) / (mNode.x - anchor.x);
+				var theta = Math.atan(slope);
+				var addLength;
+				var finish =false;
+				
+				if (expansion > maxLength) {
+					expansion = maxLength;
+					finish = true;
+				}
+				
+				// Check which node is closer to the upper left corner
+				if (anchor.x + anchor.y > mNode.x + mNode.y) {
+					addLength = expansion * -1;
+				}
+				else {
+					addLength = expansion;
+				}
 
-			if (anchor = this.node1) {
-				var anchorInterval = setInterval(function() {
-					let addDX = expansion; // will not have to divide by 2 because im only pushing towards one way
-					let addDY = expansion * ((self.node2.y - self.node1.y) / (self.node2.x - self.node1.x));
+				mNode.x = startX + addLength * Math.cos(theta);
+				mNode.y = startY + addLength * Math.sin(theta);
+				
+				expansion += expansion;
+				
+				if (finish == true) {
+					clearInterval(interval);
+				}
 
-					if (self.node1.x + self.node1.y < self.node2.x + self.node2.y) {
-						for (let i = 0; i < self.parentCreature.nodes.length; i++) {
-							if (self.parentCreature.nodes[i] == self.node1) {
-								continue;
-							}
-							self.parentCreature.nodes[i].x += addDX;
-							self.parentCreature.nodes[i].y += addDY;
-						}
-						expansion += expansion;
-						if (expansion > maxLength) {
-							clearInterval(anchorInterval);
-						}
-					}
-					else {
-						for (let i = 0; i < self.parentCreature.nodes.length; i++) {
-							if (self.parentCreature.nodes[i] == self.node1) {
-								continue;
-							}
-							self.parentCreature.nodes[i].x -= addDX;
-							self.parentCreature.nodes[i].y -= addDY;
-						}
-						expansion += expansion;
-						if (expansion > maxLength) {
-							clearInterval(anchorInterval);
-						}
-					}
-				}, 32)
-			}
+			}, 32);
 		}
-
-		//setIntervals for each way to expand?
+		// For expanding a line both ways
+		// ---------
 
 		//		var interval = setInterval(function() {
 		//			//amount of pixels to add / 2 for each node * slope(rise/run)
