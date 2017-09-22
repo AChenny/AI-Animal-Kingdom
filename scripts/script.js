@@ -1,5 +1,4 @@
 /*jshint esversion: 6 */
-//TODO: Change use of canvas to a container and moving elements around to avoid the buffer of frame drawing
 var canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
 //Node class
@@ -12,8 +11,8 @@ class Node {
 		this.highlight = highlight || false;
 		this.highlightColor = highlightColor || "#0000FF";
 		this.nodeType = nodeType || "blank";
+		this.attachedMuscles = [];
 	}
-	//TODO: **priority** Add movement node and incorporate it with muscle to move the whole creature
 	eat(otherCreature) {
 		for (let i = 0; i < creatures.length; i++) {
 			if (otherCreature == creatures[i]) {
@@ -24,6 +23,10 @@ class Node {
 	}
 }
 
+function setParentMuscleforNodes() {
+	this.node1.attachedMuscles.push(this);
+	this.node2.attachedMuscles.push(this);
+}
 //Muscle class
 class Muscle {
 	constructor(node1, node2, width, color, highlight, highlightColor) {
@@ -34,6 +37,8 @@ class Muscle {
 		this.highlight = highlight || false;
 		this.highlightColor = highlightColor || "#0000FF";
 		this.parentCreature;
+		this.normalLength = 150;
+		setParentMuscleforNodes.call(this);
 
 		//Properties of the nodes this muscle attaches to 
 		Object.defineProperties(this, {
@@ -83,54 +88,59 @@ class Muscle {
 			}
 		})
 	}
-
-	expandMuscle(maxLength) {
+	//TODO: #1 Priority: Clean up expand muscle and contract muscle functions for readability 
+	
+	expandMuscle(maxLength, _anchor) {
 		var expansion = 1;
 		var self = this;
 		var anchor;
 		var mNode;
-		//TODO: Implement dragging when contracting muscle
-
-		if (this.node1.nodeType = "movement") {
-			anchor = this.node2;
-			mNode = this.node1;
-		}
-		else if (this.node2.nodeType = "movement") {
-			anchor = this.node1;
-			mNode = this.node2;
+		var node1 = this.node1;
+		var node2 = this.node2;
+		//		if (this.node1.nodeType = "movement") {
+		//			anchor = this.node2;
+		//			mNode = this.node1;
+		//		}
+		//		else if (this.node2.nodeType = "movement") {
+		//			anchor = this.node1;
+		//			mNode = this.node2;
+		//		}
+		//		else {
+		//			anchor = false;
+		//		}
+		if (node1.nodeType == "movement" || node2.nodeType == "movement") {
+			movementNodeDetected = true;
+			var mNode = node1.nodeType == "movement" ? node2 : node1;
+			anchor = node1.nodeType == "movement" ? node1 : node2;
 		}
 		else {
-			anchor = false;
+			anchor = _anchor || node1;
+			mNode = node1 == anchor ? node2 : node1;
 		}
-		
+
 		if (anchor != false) {
 			var startX = mNode.x;
 			var startY = mNode.y;
-			
+			var addLength;
+
 			var interval = setInterval(function() {
 				var slope = (mNode.y - anchor.y) / (mNode.x - anchor.x);
 				var theta = Math.atan(slope);
-				var addLength;
-				var finish =false;
-				
+				var finish = false;
+
 				if (expansion > maxLength) {
 					expansion = maxLength;
 					finish = true;
 				}
-				
+
 				// Check which node is closer to the upper left corner
-				if (anchor.x + anchor.y > mNode.x + mNode.y) {
-					addLength = expansion * -1;
-				}
-				else {
-					addLength = expansion;
-				}
+				addLength = mNode.x < anchor.x ? -expansion : expansion;
 
 				mNode.x = startX + addLength * Math.cos(theta);
 				mNode.y = startY + addLength * Math.sin(theta);
-				
+
 				expansion += expansion;
-				
+
 				if (finish == true) {
 					clearInterval(interval);
 				}
@@ -164,10 +174,72 @@ class Muscle {
 		//			}
 		//		}, 32);
 	}
-	//TODO: **priority** Contract muscle function or work it into the expand muscle function
-}
 
-//TODO: move these functions within the creature class
+	contractMuscle(reduceLength, _anchor) {
+
+		// take current length - normal length to see how much length to change
+		var currentLength = this.length;
+		// check for a movement node
+		var node1 = this.node1;
+		var node2 = this.node2;
+		var movementNodeDetected = false;
+		var anchor;
+		var self = this; 
+
+		// If i pass the anchor, set anchor to that, if i dont, then look for movement, or contract the muscle evenely on both sides
+
+		if (node1.nodeType == "movement" || node2.nodeType == "movement") {
+			movementNodeDetected = true;
+			var mNode = node1.nodeType == "movement" ? node2 : node1;
+			anchor = node1.nodeType == "movement" ? node1 : node2;
+		}
+		else {
+			anchor = _anchor || node1;
+			mNode = node1 == anchor ? node2 : node1;
+		}
+
+		// take slope and move the nodes along that slope 
+		var startX = mNode.x;
+		var startY = mNode.y;
+		var stopInterval = false;
+		var reduction = 1;
+		reduction = mNode.x < anchor.x ? -reduction : reduction;
+
+		var interval = setInterval(function() {
+
+			if (Math.abs(reduction) > reduceLength) {
+				stopInterval = true;
+				reduction = reduction > 0 ? reduceLength : -reduceLength;
+			}
+
+			var slope = (mNode.y - anchor.y) / (mNode.x - anchor.x);
+			var theta = Math.atan(slope);
+			mNode.x = startX - reduction * Math.cos(theta);
+			mNode.y = startY - reduction * Math.sin(theta);
+
+			if (stopInterval == true) {
+				//clear interval, now check if the other muscle lengths have changed
+				for (let i = 0; i < mNode.attachedMuscles.length; i++) {
+					if (mNode.attachedMuscles[i] == self) {
+						continue;
+					}
+					// check if other attached muscles to anchor are at normal length, if it isnt, then it will contract or expand them accordingly
+					if (mNode.attachedMuscles[i].length != mNode.attachedMuscles[i].normalLength) {
+						var missingLength = mNode.attachedMuscles[i].length - mNode.attachedMuscles[i].normalLength;
+						// Need to call contract muscle with an anchor as the next node 
+						missingLength > 0 ? mNode.attachedMuscles[i].contractMuscle(Math.abs(missingLength), mNode) : mNode.attachedMuscles[i].expandMuscle(Math.abs(missingLength), mNode);
+					}
+				}
+
+				clearInterval(interval);
+
+			}
+			reduction += reduction;
+
+		}, 32);
+	}
+}
+//TODO: #2 Priority: Move these functions within the creature class
 function setParentForNodes() {
 	this.nodes.forEach(node => {
 		node.parentCreature = this;
@@ -770,6 +842,8 @@ function populateSelections() {
 	arraySelection.appendChild(aFragment);
 	creatureSel.appendChild(cFragment);
 }
+
+//TODO: #3 Priority: Make a function that will handle add to queue that will take the form selections and make them into commands
 
 //Main - Grabs document elements to draw a canvas on, init node and muscle arrays and then continuously updates frame to redraw
 function main() {
