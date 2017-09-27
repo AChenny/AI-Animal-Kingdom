@@ -36,51 +36,31 @@
 				<p>Commands</p>
 			</center>
 			<!--Buttons 1. Array number 2. Type= Node/muscle 3. Add to queue of commands-->
-			<form>
+			<form id="commandForm">
 				<div class="selection">
-					<select id="creatureSelection" name="creature">
-						<option selected disabled>Creature Number</option>
+					<p class=commandHeads>Creature Number:</p>
+					<select id="creatureSelection" name="creature" onchange="populateArraySelection('typeSelection', 'creatureSelection', 'arraySelection')">
+<!--						<option selected disabled>Creature Number</option>-->
 					</select>
 				</div>
 				<div class="selection">
-					<select id="typeSelection" name="type">
-						<option selected disabled>Type</option>
+					<p class=commandHeads>Type:</p>
+					<select id="typeSelection" name="type" onchange="populateArraySelection('typeSelection', 'creatureSelection', 'arraySelection')">
+<!--						<option selected disabled>Type</option>-->
 						<option value="muscle">Muscle</option>
 						<option value="node">Node</option>
 					</select>
 				</div>
 				<div class="selection">
-					<select id="arraySelection" name="array">
-						<option selected disabled>Array Number</option>
+					<p class=commandHeads>Array Number:</p>
+					<select id="arraySelection" name="array" >
+<!--						<option selected disabled>Array Number</option>-->
 					</select>
 				</div>
-				<input type="submit" value="Add To Queue">
+				<input type="button" onclick = "handleAddtoQueue()" value="Add To Queue">
 				<!--TODO: #1 Priority: Add the play button for queued commands-->
 			</form>
-
-			<!--
-				<div class="dropdown">
-					<button id="creatureButton" onclick="dropDownMenu(id)" class="dropbtn">Creature</button>
-					<div id="creatureDropdown" class="dropdown-content">
-						<p>1</p>
-						<p>2</p>
-						<p>3</p>
-					</div>
-					<button id="typeButton" class="dropbtn" onclick="dropDownMenu(id)">Type</button>
-					<div id="typeDropdown" class="dropdown-content">
-						<p>Node</p>
-						<p>Muscle</p>
-					</div>
-					<button id="arrayButton" onclick="dropDownMenu(id)" class="dropbtn">i</button>
-					<div id="arrayDropdown" class="dropdown-content">
-						<p>1</p>
-						<p>2</p>
-						<p>3</p>
-					</div>
-				</div>
-				<button id="addToQueueB">+</button>
-			</center>
--->
+			<button id="playButton" onclick="playCommands()">Play Commands</button>
 		</section>
 
 	</div>

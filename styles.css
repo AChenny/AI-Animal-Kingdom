@@ -74,7 +74,10 @@ form {
 .selection {
 	margin-bottom: 10px;
 }
-
+.commandHeads {
+	line-height: 0px;
+	display: inline;
+}
 
 #increaseLength,
 #decreaseLength,
