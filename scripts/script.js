@@ -395,8 +395,6 @@ function handleMouseDrag(canvas, creatureNodes) {
 	});
 }
 
-
-
 //Handle highlighting and button functionality
 function handleMouseClick(canvas, nodes, muscles) {
 	var nodeIsHighlighted;
@@ -577,7 +575,6 @@ function handleMouseClick(canvas, nodes, muscles) {
 	});
 }
 
-
 //Handle Devtools
 function devTools(addNode, removeNode, attachMuscle, addLimb, increaseLength, decreaseLength) {
 	//TODO: add remove Muscle functionality
@@ -714,6 +711,7 @@ function checkIfEat(node1, node2, radius) {
 
 var commands = [];
 
+//When function is called, all commands will be played in 1 second intervals
 function playCommands() {
 	//for the length of the commands, run an interval of about 1 second to run a command
 	var interval = setInterval(function () {
@@ -737,6 +735,7 @@ function playCommands() {
 	}, 1000);
 }
 
+//Takes the form and sends that in a variable to the commands array
 function handleAddtoQueue() {
 	var commandForm = document.getElementById("commandForm");
 	var creatureSelection = document.getElementById("creatureSelection");
@@ -760,7 +759,6 @@ function handleAddtoQueue() {
 		};
 		commands.push(command);
 	}
-
 	commandForm.reset();
 }
 
@@ -768,7 +766,7 @@ function handleAddtoQueue() {
 function populateSelections() {
 	var creatureSel = document.getElementById("creatureSelection");
 	creatureSel.innerHTML = "";
-
+	
 	for (let i = 0; i < creatures.length; i++) {
 		//for every creature create an option with value of i, and an innerHTML of i
 		let newOption = document.createElement("option");
@@ -782,15 +780,12 @@ function populateArraySelection(type, creature, array) {
 	var type = document.getElementById(type);
 	var creature = document.getElementById(creature);
 	var array = document.getElementById(array);
-	//remove all other innerHTML in this and then for look to take the values of the other selections 
-	//Take the id of this (whatever called the onchance) and the array selection, and the creature number to populate the array
-	//check if type or creature is empty - if it is, then array.innerHTML will remain empty. 
+	
 	array.innerHTML = "";
-
-	//if they both have a value, take both those values and plug them into a function to populate the requested arraylist
+	
 	var creatureNumber = creature.value;
 	var typeValue = type.value;
-
+	//Check if the type is muscle or a node and then use that to find out how many are in that array to populate 
 	if (typeValue == "muscle") {
 		for (let i = 0; i < creatures[creatureNumber].muscles.length; i++) {
 			var newOption = document.createElement("option");
@@ -798,7 +793,8 @@ function populateArraySelection(type, creature, array) {
 			newOption.value = i;
 			array.options.add(newOption);
 		}
-	} else if (typeValue == "node") {
+	} 
+	else if (typeValue == "node") {
 		for (let i = 0; i < creatures[creatureNumber].nodes.length; i++) {
 			let newOption = document.createElement("option");
 			newOption.innerHTML = i;
